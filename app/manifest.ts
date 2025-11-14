@@ -39,8 +39,7 @@ export default function manifest(): MetadataRoute.Manifest {
     // Web Share Target API configuration
     share_target: {
       action: '/share',
-      method: 'POST',
-      enctype: 'application/x-www-form-urlencoded',
+      method: 'GET',
       params: {
         title: 'title',
         text: 'text',
