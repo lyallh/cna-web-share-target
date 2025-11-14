@@ -38,6 +38,10 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     // Web Share Target API configuration
     share_target: {
+      // Three options (for demonstration purposes):
+      // 1. POST request to /share (handled by service worker and forwards to /shared)
+      // 2. GET request to /share (sends to server and forwards to /shared)
+      // 3. Direct GET to /shared (no server involvement)
       action: '/share',
       method: 'GET',
       params: {

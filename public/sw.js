@@ -33,8 +33,39 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Fetch event - serve from cache, fallback to network
+// Handle Web Share Target POST to /share
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url)
+
+  if (event.request.method === 'POST' && url.pathname === '/share') {
+    event.respondWith(
+      (async () => {
+        try {
+          const formData = await event.request.formData()
+          const title = formData.get('title') || ''
+          const text = formData.get('text') || ''
+          const sharedUrl = formData.get('url') || ''
+
+          // Build redirect URL with query params
+          const params = new URLSearchParams()
+          if (title) params.set('title', title)
+          if (text) params.set('text', text)
+          if (sharedUrl) params.set('url', sharedUrl)
+
+          const redirectUrl = `/shared?${params.toString()}`
+
+          // Return a redirect response
+          return Response.redirect(redirectUrl, 303)
+        } catch (error) {
+          console.error('Error processing share in service worker:', error)
+          return Response.redirect('/shared?error=1', 303)
+        }
+      })()
+    )
+    return
+  }
+
+  // Default fetch behavior - serve from cache, fallback to network
   event.respondWith(
     caches.match(event.request).then((response) => {
       // Return cached version or fetch from network
