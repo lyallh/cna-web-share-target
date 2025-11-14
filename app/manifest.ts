@@ -37,14 +37,17 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     // Web Share Target API configuration
+    // Note (Sonnet 4.5): Using GET method because service workers cannot intercept
+    // external POST navigation requests (security limitation).
     share_target: {
       // Three options (for demonstration purposes):
-      // 1. POST request to /share (handled by service worker and forwards to /shared)
-      // 2. GET request to /share (sends to server and forwards to /shared)
+      // 1. POST request to /share (handled by server and forwards to /shared)
+      //    - NB: Cannot intercept with service worker because it's an external navigation request.
+      // 2. GET request to /share (handled at server and forwards to /shared)
       // 3. Direct GET to /shared (no server involvement)
-      action: '/share',
-      method: 'POST',
-      enctype: 'application/x-www-form-urlencoded',
+      action: '/shared',
+      method: 'GET',
+      // enctype: 'application/x-www-form-urlencoded',    // POST only
       params: {
         title: 'title',
         text: 'text',
