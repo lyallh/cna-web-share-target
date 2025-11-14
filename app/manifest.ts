@@ -43,7 +43,8 @@ export default function manifest(): MetadataRoute.Manifest {
       // 2. GET request to /share (sends to server and forwards to /shared)
       // 3. Direct GET to /shared (no server involvement)
       action: '/share',
-      method: 'GET',
+      method: 'POST',
+      enctype: 'application/x-www-form-urlencoded',
       params: {
         title: 'title',
         text: 'text',
