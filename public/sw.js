@@ -1,4 +1,4 @@
-const CACHE_NAME = 'web-share-target-v5'
+const CACHE_NAME = 'web-share-target-v6'
 const urlsToCache = []
 
 // Install event - cache resources
@@ -37,7 +37,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
 
+  // Debug logging
+  console.log('SW fetch:', event.request.method, url.pathname)
+
   if (event.request.method === 'POST' && url.pathname === '/share') {
+    console.log('SW intercepting POST to /share')
     event.respondWith(
       (async () => {
         try {
