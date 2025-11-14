@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
+import Link from 'next/link'
 
 interface ShareData {
   title: string
@@ -158,12 +159,12 @@ function SharePageContent() {
           </div>
 
           <div className="w-full text-center">
-            <a
+            <Link
               href="/"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               ← Back to Home
-            </a>
+            </Link>
           </div>
         </div>
       </main>

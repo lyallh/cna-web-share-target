@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -9,6 +11,12 @@ export default function Home() {
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             Investigate the Web Share Target API
           </p>
+          <Link
+            href="/shared"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            View Shared Data Page →
+          </Link>
         </div>
 
         <div className="flex flex-col gap-6 w-full">
@@ -19,7 +27,9 @@ export default function Home() {
             <ol className="list-decimal list-inside space-y-2 text-zinc-600 dark:text-zinc-400">
               <li>Open this app in Chrome on Android</li>
               <li>Tap the menu (three dots) in the browser</li>
-              <li>Select &quot;Add to Home screen&quot; or &quot;Install app&quot;</li>
+              <li>
+                Select &quot;Add to Home screen&quot; or &quot;Install app&quot;
+              </li>
               <li>Confirm the installation</li>
               <li>The app will appear on your home screen</li>
             </ol>
@@ -43,13 +53,14 @@ export default function Home() {
               About
             </h2>
             <p className="text-zinc-600 dark:text-zinc-400">
-              This PWA demonstrates the Web Share Target API, which allows installed
-              PWAs to receive shared content from other apps. When you share text from
-              Chrome, this app will receive and display the title, text, and URL (if available).
+              This PWA demonstrates the Web Share Target API, which allows
+              installed PWAs to receive shared content from other apps. When you
+              share text from Chrome, this app will receive and display the
+              title, text, and URL (if available).
             </p>
           </div>
         </div>
       </main>
     </div>
-  );
+  )
 }
