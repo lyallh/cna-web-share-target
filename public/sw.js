@@ -1,5 +1,5 @@
 const CACHE_NAME = 'web-share-target-v6'
-const urlsToCache = []
+const urlsToCache = [] // ['/', '/shared']
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
