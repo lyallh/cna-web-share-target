@@ -15,7 +15,20 @@ interface ShareData {
 
 function SharePageContent() {
   const searchParams = useSearchParams()
-  const [shareData, setShareData] = useState<ShareData | null>(null)
+  const [shareData, setShareData] = useState<ShareData | null>(() => {
+    // Initialize from localStorage on mount
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('latestShareData')
+      if (stored) {
+        try {
+          return JSON.parse(stored)
+        } catch (e) {
+          console.error('Failed to parse stored share data:', e)
+        }
+      }
+    }
+    return null
+  })
 
   useEffect(() => {
     const title = searchParams.get('title') || ''
@@ -23,8 +36,10 @@ function SharePageContent() {
     const url = searchParams.get('url') || ''
     const error = searchParams.get('error')
 
+    let newShareData: ShareData
+
     if (error) {
-      setShareData({
+      newShareData = {
         title: '',
         text: 'Error receiving shared data',
         url: '',
@@ -32,19 +47,22 @@ function SharePageContent() {
         userAgent:
           typeof window !== 'undefined' ? window.navigator.userAgent : '',
         referrer: typeof document !== 'undefined' ? document.referrer : '',
-      })
-      return
+      }
+    } else {
+      newShareData = {
+        title,
+        text,
+        url,
+        timestamp: new Date().toISOString(),
+        userAgent:
+          typeof window !== 'undefined' ? window.navigator.userAgent : '',
+        referrer: typeof document !== 'undefined' ? document.referrer : '',
+      }
     }
 
-    setShareData({
-      title,
-      text,
-      url,
-      timestamp: new Date().toISOString(),
-      userAgent:
-        typeof window !== 'undefined' ? window.navigator.userAgent : '',
-      referrer: typeof document !== 'undefined' ? document.referrer : '',
-    })
+    // Store in localStorage
+    localStorage.setItem('latestShareData', JSON.stringify(newShareData))
+    setShareData(newShareData)
   }, [searchParams])
 
   if (!shareData) {
