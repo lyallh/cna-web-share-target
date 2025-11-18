@@ -3,67 +3,100 @@
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
-
-interface ShareData {
-  title: string
-  text: string
-  url: string
-  timestamp: string
-  userAgent: string
-  referrer: string
-}
+import { saveShareData, getShareHistory } from './actions'
+import type { ShareData, ShareDataWithId } from '@/types/share'
 
 function SharePageContent() {
   const searchParams = useSearchParams()
-  const [shareData, setShareData] = useState<ShareData | null>(() => {
-    // Initialize from localStorage on mount
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('latestShareData')
-      if (stored) {
-        try {
-          return JSON.parse(stored)
-        } catch (e) {
-          console.error('Failed to parse stored share data:', e)
+  const [shareData, setShareData] = useState<ShareData | null>(null)
+  const [history, setHistory] = useState<ShareDataWithId[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true)
+
+  useEffect(function loadHistoryFromServer() {
+    getShareHistory()
+      .then(setHistory)
+      .catch((error) => {
+        console.error('Failed to load share history:', error)
+      })
+      .finally(() => {
+        setIsLoadingHistory(false)
+      })
+  }, [])
+
+  useEffect(function initializeShareDataFromLocalStorage() {
+    const stored = localStorage.getItem('latestShareData')
+    if (stored) {
+      try {
+        setShareData(JSON.parse(stored))
+      } catch (e) {
+        console.error('Failed to parse stored share data:', e)
+      }
+    }
+  }, [])
+
+  useEffect(
+    function updateShareDataFromSearchParams() {
+      const title = searchParams.get('title') || ''
+      const text = searchParams.get('text') || ''
+      const url = searchParams.get('url') || ''
+      const error = searchParams.get('error')
+
+      if (!title && !text && !url && !error) {
+        return
+      }
+
+      let newShareData: ShareData
+
+      if (error) {
+        newShareData = {
+          title: '',
+          text: 'Error receiving shared data',
+          url: '',
+          timestamp: new Date().toISOString(),
+          userAgent:
+            typeof window !== 'undefined' ? window.navigator.userAgent : '',
+          referrer: typeof document !== 'undefined' ? document.referrer : '',
+        }
+      } else {
+        newShareData = {
+          title,
+          text,
+          url,
+          timestamp: new Date().toISOString(),
+          userAgent:
+            typeof window !== 'undefined' ? window.navigator.userAgent : '',
+          referrer: typeof document !== 'undefined' ? document.referrer : '',
         }
       }
-    }
-    return null
-  })
 
-  useEffect(() => {
-    const title = searchParams.get('title') || ''
-    const text = searchParams.get('text') || ''
-    const url = searchParams.get('url') || ''
-    const error = searchParams.get('error')
+      localStorage.setItem('latestShareData', JSON.stringify(newShareData))
+      setShareData(newShareData)
+    },
+    [searchParams]
+  )
 
-    let newShareData: ShareData
+  async function handleSaveToHistory() {
+    if (!shareData) return
 
-    if (error) {
-      newShareData = {
-        title: '',
-        text: 'Error receiving shared data',
-        url: '',
-        timestamp: new Date().toISOString(),
-        userAgent:
-          typeof window !== 'undefined' ? window.navigator.userAgent : '',
-        referrer: typeof document !== 'undefined' ? document.referrer : '',
+    setIsSaving(true)
+    try {
+      const id = await saveShareData(shareData)
+      if (id) {
+        const updatedHistory = await getShareHistory()
+        setHistory(updatedHistory)
       }
-    } else {
-      newShareData = {
-        title,
-        text,
-        url,
-        timestamp: new Date().toISOString(),
-        userAgent:
-          typeof window !== 'undefined' ? window.navigator.userAgent : '',
-        referrer: typeof document !== 'undefined' ? document.referrer : '',
-      }
+    } catch (error) {
+      console.error('Failed to save share data:', error)
+    } finally {
+      setIsSaving(false)
     }
+  }
 
-    // Store in localStorage
-    localStorage.setItem('latestShareData', JSON.stringify(newShareData))
-    setShareData(newShareData)
-  }, [searchParams])
+  function handleHistoryItemClick(item: ShareDataWithId) {
+    setShareData(item)
+    localStorage.setItem('latestShareData', JSON.stringify(item))
+  }
 
   if (!shareData) {
     return (
@@ -175,6 +208,53 @@ function SharePageContent() {
               </div>
             </div>
           </div>
+
+          <button
+            onClick={handleSaveToHistory}
+            disabled={isSaving}
+            className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-zinc-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 dark:disabled:bg-zinc-700"
+          >
+            {isSaving ? 'Saving...' : 'Save to History'}
+          </button>
+
+          {history.length > 0 && (
+            <div className="space-y-4 rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
+              <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
+                History
+              </h2>
+              {isLoadingHistory ? (
+                <div className="text-center text-zinc-600 dark:text-zinc-400">
+                  Loading history...
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {history.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleHistoryItemClick(item)}
+                      className="w-full rounded-md border border-zinc-200 bg-white p-4 text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:hover:bg-zinc-900"
+                    >
+                      <div className="font-semibold text-black dark:text-zinc-50">
+                        {item.title || (
+                          <span className="italic text-zinc-400 dark:text-zinc-600">
+                            (no title)
+                          </span>
+                        )}
+                      </div>
+                      {item.text && (
+                        <div className="mt-1 italic text-sm text-zinc-700 line-clamp-2 dark:text-zinc-300">
+                          {item.text}
+                        </div>
+                      )}
+                      <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                        {new Date(item.timestamp).toLocaleString()}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="w-full text-center">
             <Link
