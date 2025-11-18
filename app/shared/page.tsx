@@ -6,6 +6,173 @@ import Link from 'next/link'
 import { saveShareData, getShareHistory } from './actions'
 import type { ShareData, ShareDataWithId } from '@/types/share'
 
+interface ShareDataDisplayProps {
+  shareData: ShareData
+  isSaving: boolean
+  onSave: () => void
+}
+
+/**
+ * Displays active share data with all fields and save button
+ */
+function ShareDataDisplay({ shareData, isSaving, onSave }: ShareDataDisplayProps) {
+  return (
+    <>
+      <div className="space-y-6 rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-zinc-600 dark:text-zinc-400">
+            Title
+          </h2>
+          <div className="min-h-[3rem] rounded-md border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-black">
+            <p className="whitespace-pre-wrap break-words text-black dark:text-zinc-50">
+              {shareData.title || (
+                <span className="italic text-zinc-400 dark:text-zinc-600">
+                  (empty)
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-zinc-600 dark:text-zinc-400">
+            Text
+          </h2>
+          <div className="min-h-[6rem] rounded-md border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-black">
+            <p className="whitespace-pre-wrap break-words text-black dark:text-zinc-50">
+              {shareData.text || (
+                <span className="italic text-zinc-400 dark:text-zinc-600">
+                  (empty)
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-zinc-600 dark:text-zinc-400">
+            URL
+          </h2>
+          <div className="min-h-[3rem] rounded-md border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-black">
+            {shareData.url ? (
+              <a
+                href={shareData.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-all text-blue-600 hover:underline dark:text-blue-400"
+              >
+                {shareData.url}
+              </a>
+            ) : (
+              <span className="italic text-zinc-400 dark:text-zinc-600">
+                (empty)
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
+        <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
+          Metadata
+        </h2>
+        <div className="space-y-3 text-sm">
+          <div>
+            <span className="font-semibold text-zinc-600 dark:text-zinc-400">
+              Timestamp:{' '}
+            </span>
+            <span className="text-black dark:text-zinc-50">
+              {new Date(shareData.timestamp).toLocaleString()}
+            </span>
+          </div>
+          <div>
+            <span className="font-semibold text-zinc-600 dark:text-zinc-400">
+              User Agent:{' '}
+            </span>
+            <span className="break-all text-black dark:text-zinc-50">
+              {shareData.userAgent}
+            </span>
+          </div>
+          <div>
+            <span className="font-semibold text-zinc-600 dark:text-zinc-400">
+              Referrer:{' '}
+            </span>
+            <span className="break-all text-black dark:text-zinc-50">
+              {shareData.referrer || (
+                <span className="italic text-zinc-400 dark:text-zinc-600">
+                  (none)
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={onSave}
+        disabled={isSaving}
+        className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-zinc-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 dark:disabled:bg-zinc-700"
+      >
+        {isSaving ? 'Saving...' : 'Save to History'}
+      </button>
+    </>
+  )
+}
+
+interface HistoryListProps {
+  history: ShareDataWithId[]
+  isLoading: boolean
+  onItemClick: (item: ShareDataWithId) => void
+}
+
+/**
+ * Displays list of saved share history entries
+ */
+function HistoryList({ history, isLoading, onItemClick }: HistoryListProps) {
+  if (history.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="space-y-4 rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
+      <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
+        History
+      </h2>
+      {isLoading ? (
+        <div className="text-center text-zinc-600 dark:text-zinc-400">
+          Loading history...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {history.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onItemClick(item)}
+              className="w-full rounded-md border border-zinc-200 bg-white p-4 text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:hover:bg-zinc-900"
+            >
+              <div className="font-semibold text-black dark:text-zinc-50">
+                {item.title || (
+                  <span className="italic text-zinc-400 dark:text-zinc-600">
+                    (no title)
+                  </span>
+                )}
+              </div>
+              {item.text && (
+                <div className="mt-1 italic text-sm text-zinc-700 line-clamp-2 dark:text-zinc-300">
+                  {item.text}
+                </div>
+              )}
+              <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                {new Date(item.timestamp).toLocaleString()}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function SharePageContent() {
   const searchParams = useSearchParams()
   const [shareData, setShareData] = useState<ShareData | null>(null)
@@ -98,14 +265,6 @@ function SharePageContent() {
     localStorage.setItem('latestShareData', JSON.stringify(item))
   }
 
-  if (!shareData) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-        <div className="text-zinc-600 dark:text-zinc-400">Loading...</div>
-      </div>
-    )
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
@@ -119,142 +278,25 @@ function SharePageContent() {
         </div>
 
         <div className="flex w-full flex-col gap-6">
-          <div className="space-y-6 rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-zinc-600 dark:text-zinc-400">
-                Title
-              </h2>
-              <div className="min-h-[3rem] rounded-md border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-black">
-                <p className="whitespace-pre-wrap break-words text-black dark:text-zinc-50">
-                  {shareData.title || (
-                    <span className="italic text-zinc-400 dark:text-zinc-600">
-                      (empty)
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-zinc-600 dark:text-zinc-400">
-                Text
-              </h2>
-              <div className="min-h-[6rem] rounded-md border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-black">
-                <p className="whitespace-pre-wrap break-words text-black dark:text-zinc-50">
-                  {shareData.text || (
-                    <span className="italic text-zinc-400 dark:text-zinc-600">
-                      (empty)
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-zinc-600 dark:text-zinc-400">
-                URL
-              </h2>
-              <div className="min-h-[3rem] rounded-md border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-black">
-                {shareData.url ? (
-                  <a
-                    href={shareData.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="break-all text-blue-600 hover:underline dark:text-blue-400"
-                  >
-                    {shareData.url}
-                  </a>
-                ) : (
-                  <span className="italic text-zinc-400 dark:text-zinc-600">
-                    (empty)
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
-            <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
-              Metadata
-            </h2>
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="font-semibold text-zinc-600 dark:text-zinc-400">
-                  Timestamp:{' '}
-                </span>
-                <span className="text-black dark:text-zinc-50">
-                  {new Date(shareData.timestamp).toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="font-semibold text-zinc-600 dark:text-zinc-400">
-                  User Agent:{' '}
-                </span>
-                <span className="break-all text-black dark:text-zinc-50">
-                  {shareData.userAgent}
-                </span>
-              </div>
-              <div>
-                <span className="font-semibold text-zinc-600 dark:text-zinc-400">
-                  Referrer:{' '}
-                </span>
-                <span className="break-all text-black dark:text-zinc-50">
-                  {shareData.referrer || (
-                    <span className="italic text-zinc-400 dark:text-zinc-600">
-                      (none)
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleSaveToHistory}
-            disabled={isSaving}
-            className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-zinc-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 dark:disabled:bg-zinc-700"
-          >
-            {isSaving ? 'Saving...' : 'Save to History'}
-          </button>
-
-          {history.length > 0 && (
-            <div className="space-y-4 rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
-              <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
-                History
-              </h2>
-              {isLoadingHistory ? (
-                <div className="text-center text-zinc-600 dark:text-zinc-400">
-                  Loading history...
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {history.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleHistoryItemClick(item)}
-                      className="w-full rounded-md border border-zinc-200 bg-white p-4 text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:hover:bg-zinc-900"
-                    >
-                      <div className="font-semibold text-black dark:text-zinc-50">
-                        {item.title || (
-                          <span className="italic text-zinc-400 dark:text-zinc-600">
-                            (no title)
-                          </span>
-                        )}
-                      </div>
-                      {item.text && (
-                        <div className="mt-1 italic text-sm text-zinc-700 line-clamp-2 dark:text-zinc-300">
-                          {item.text}
-                        </div>
-                      )}
-                      <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                        {new Date(item.timestamp).toLocaleString()}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+          {shareData ? (
+            <ShareDataDisplay
+              shareData={shareData}
+              isSaving={isSaving}
+              onSave={handleSaveToHistory}
+            />
+          ) : (
+            <div className="rounded-lg bg-zinc-100 p-6 text-center dark:bg-zinc-900">
+              <p className="text-zinc-600 dark:text-zinc-400">
+                No share data yet. Share something to this app or select from history below.
+              </p>
             </div>
           )}
+
+          <HistoryList
+            history={history}
+            isLoading={isLoadingHistory}
+            onItemClick={handleHistoryItemClick}
+          />
 
           <div className="w-full text-center">
             <Link
