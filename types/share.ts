@@ -9,4 +9,5 @@ export interface ShareData {
 
 export interface ShareDataWithId extends ShareData {
   id: string
+  userId: string
 }

@@ -3,6 +3,13 @@
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
+import {
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+  useAuth,
+} from '@clerk/nextjs'
 import { saveShareData, getShareHistory } from './actions'
 import type { ShareData, ShareDataWithId } from '@/types/share'
 
@@ -10,12 +17,18 @@ interface ShareDataDisplayProps {
   shareData: ShareData
   isSaving: boolean
   onSave: () => void
+  isSignedIn: boolean
 }
 
 /**
  * Displays active share data with all fields and save button
  */
-function ShareDataDisplay({ shareData, isSaving, onSave }: ShareDataDisplayProps) {
+function ShareDataDisplay({
+  shareData,
+  isSaving,
+  onSave,
+  isSignedIn,
+}: ShareDataDisplayProps) {
   return (
     <>
       <div className="space-y-6 rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
@@ -108,13 +121,21 @@ function ShareDataDisplay({ shareData, isSaving, onSave }: ShareDataDisplayProps
         </div>
       </div>
 
-      <button
-        onClick={onSave}
-        disabled={isSaving}
-        className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-zinc-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 dark:disabled:bg-zinc-700"
-      >
-        {isSaving ? 'Saving...' : 'Save to History'}
-      </button>
+      {isSignedIn ? (
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-zinc-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 dark:disabled:bg-zinc-700"
+        >
+          {isSaving ? 'Saving...' : 'Save to History'}
+        </button>
+      ) : (
+        <div className="rounded-lg bg-zinc-100 p-6 text-center dark:bg-zinc-900">
+          <p className="text-zinc-600 dark:text-zinc-400">
+            Please sign in to save to history
+          </p>
+        </div>
+      )}
     </>
   )
 }
@@ -175,6 +196,7 @@ function HistoryList({ history, isLoading, onItemClick }: HistoryListProps) {
 
 function SharePageContent() {
   const searchParams = useSearchParams()
+  const { isSignedIn } = useAuth()
   const [shareData, setShareData] = useState<ShareData | null>(null)
   const [history, setHistory] = useState<ShareDataWithId[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -268,13 +290,29 @@ function SharePageContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
-        <div className="flex w-full flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            Received Shared Data
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            All information received from the share operation
-          </p>
+        <div className="flex w-full flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+                Received Shared Data
+              </h1>
+              <p className="text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+                All information received from the share operation
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+                    Sign In
+                  </button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+            </div>
+          </div>
         </div>
 
         <div className="flex w-full flex-col gap-6">
@@ -283,11 +321,13 @@ function SharePageContent() {
               shareData={shareData}
               isSaving={isSaving}
               onSave={handleSaveToHistory}
+              isSignedIn={isSignedIn ?? false}
             />
           ) : (
             <div className="rounded-lg bg-zinc-100 p-6 text-center dark:bg-zinc-900">
               <p className="text-zinc-600 dark:text-zinc-400">
-                No share data yet. Share something to this app or select from history below.
+                No share data yet. Share something to this app or select from
+                history below.
               </p>
             </div>
           )}
